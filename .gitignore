@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# macOS
+.DS_Store
+
+# Project data (raw mocap files, parsed-curve cache, computed results --
+# large and/or regenerable, not source)
+data/raw/
+data/results/*.csv
