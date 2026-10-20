@@ -1,20 +1,36 @@
 """
-Operations on whole curves in SO(3)^d: the SRVT-only distance (no time
-alignment), the DP-optimized distance (with time alignment), geodesic
-interpolation, reparameterization, and the piecewise-linear lift used to
-prepare paths for signature computation.
+Operations on whole curves in SO(3)^d: the SRVT-only distance (no time alignment), the DP-optimized distance (with time alignment), 
+moving a curve's origin to the identity, and reparameterization.
 """
 
 from numpy import linspace, array, dot, zeros
 from .dynamic_distance import find_optimal_diffeomorphism, L2_metric
-from .transformations import skew_to_vector, SRVT, inverse_SRVT
-from .transformations import interpolate as tf_interpolate
+from .so3_math import skew_to_vector, SRVT
+from .so3_math import interpolate as tf_interpolate
 
 
 def distance(c0, c1, I0=None, I1=None):
-    """SRVT-only distance d_P*(c0, c1): no time-alignment search, just the
-    L2 distance between the two curves' SRVT representations under their
-    given (or default, evenly-spaced) parameterizations."""
+    """
+    SRVT distance d_P(c0, c1) between two curves in SO(3)^d, with optional sample-time grids I0 and I1. 
+    Recurses over multi-joint curves.
+
+    Parameters
+    ----------
+    c0 : ndarray, shape (n, 3, 3) or (d, n, 3, 3)
+        A curve (or multi-joint curve) of rotation matrices.
+    c1 : ndarray, shape (n, 3, 3) or (d, n, 3, 3)
+        Another curve (or multi-joint curve) of rotation matrices.
+    I0 : ndarray, shape (n,), optional
+        Sample times for `c0`. If not provided, assumed to be uniform in [0, 1].
+    I1 : ndarray, shape (n,), optional      
+        Sample times for `c1`. If not provided, assumed to be uniform in [0, 1].
+    
+    Returns 
+    -------
+    float
+        The SRVT distance between the two curves.
+    """
+
     is_multi = len(c0.shape) == 4
     if I0 is None:
         I0 = linspace(0, 1, c0.shape[1 if is_multi else 0])
@@ -28,13 +44,22 @@ def distance(c0, c1, I0=None, I1=None):
 
 
 def dynamic_distance(c0, c1, depth=5):
-    """SRVT + dynamic-programming distance d_S*(c0, c1): find the
-    reparameterization of c1 minimizing the SRVT distance to c0 (via
-    `dynamic_distance.find_optimal_diffeomorphism`), reparameterize, then
-    measure the remaining distance. Equation (4): dS := inf_phi dP(c0, c1 o phi).
+    """
+    Dynamic programming distance between two curves in SO(3)^d, with time alignment. Recurses over multi-joint curves.
 
-    `depth` is the DP search-window size -- the main cost/accuracy knob,
-    roughly O(depth^3) cost.
+    Parameters
+    ----------
+    c0 : ndarray, shape (n, 3, 3) or (d, n, 3, 3)
+        A curve (or multi-joint curve) of rotation matrices.
+    c1 : ndarray, shape (n, 3, 3) or (d, n, 3, 3)
+        Another curve (or multi-joint curve) of rotation matrices.
+    depth : int, optional   
+        The depth of the dynamic programming search. Higher values are more accurate but slower. Default is 5.
+
+    Returns
+    -------
+    float
+        The dynamic programming distance between the two curves.
     """
     is_multi = len(c0.shape) == 4
     I0 = linspace(0, 1, c0.shape[1 if is_multi else 0])
@@ -49,34 +74,43 @@ def dynamic_distance(c0, c1, depth=5):
 
 
 def move_origin_to_zero(c):
-    """Right-translate a curve so it starts at the identity: c(0) = I.
-    Required for the P* restriction the SRVT relies on. Recurses over
-    multi-joint curves."""
+    """
+    Move the origin of a curve in SO(3)^d to the identity. Recurses over multi-joint curves.
+    
+    Parameters
+    ----------
+    c : ndarray, shape (n, 3, 3) or (d, n, 3, 3)
+        A curve (or multi-joint curve) of rotation matrices.
+
+    Returns
+    -------
+    ndarray
+        The curve with its origin moved to the identity.
+    """
     if len(c.shape) == 4:
         return array([move_origin_to_zero(e) for e in c])
 
     return array([dot(matrix, c[0].T) for matrix in c])
 
 
-def interpolate(c0, c1, s):
-    """Linearly interpolate between two curves via SRVT / inverse SRVT
-    (the shape-space analogue of straight-line interpolation)."""
-    if len(c0.shape) == 4:
-        d, N, _, _ = c0.shape
-        I = linspace(0, 1, N)
-        q = array([(1 - s) * SRVT(c0[i], I) + s * SRVT(c1[i], I) for i in range(d)])
-        return array([inverse_SRVT(q[i], I) for i in range(d)])
-    else:
-        I = linspace(0, 1, c0.shape[0])
-        q = (1 - s) * SRVT(c0, I) + s * SRVT(c1, I)
-        return inverse_SRVT(q, I)
-
-
 def reparameterize(I_new, I, c):
-    """Reparameterize curve c at new sample times I_new: for each new time,
-    find its subinterval in the original grid I and geodesically
-    interpolate c between those two endpoints. Recurses over multi-joint
-    curves."""
+    """
+    Reparameterize a curve in SO(3)^d to a new sample-time grid. Recurses over multi-joint curves.
+    
+    Parameters
+    ----------      
+    I_new : ndarray, shape (n,)
+        The new sample-time grid.
+    I : ndarray, shape (n,)
+        The original sample-time grid.
+    c : ndarray, shape (n, 3, 3) or (d, n, 3, 3)
+        A curve (or multi-joint curve) of rotation matrices.
+
+    Returns
+    -------
+    ndarray
+        The reparameterized curve.
+    """
     if len(c.shape) == 4:
         return array([reparameterize(I_new, I, e) for e in c])
 
@@ -95,7 +129,3 @@ def reparameterize(I_new, I, c):
         c_new[i] = tf_interpolate(c[j % N], c[(j + 1) % N], s)
 
     return c_new
-
-
-# L2_metric used to be defined here too (identical to dynamic_distance.py's
-# version) -- now imported from there instead, see the import block above.

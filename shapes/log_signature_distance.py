@@ -1,18 +1,16 @@
 """
-Log-signature computation and the normalized log-signature distance
-(sim_n / d_sig) -- the fast, alignment-free metric that reproduces the
-thesis's Fig. 9.7 result (and, via `normalized_linear_distance`, the
-"signature" column everywhere else in this project).
+Log-signature computation and the normalized log-signature distance (sim_n / d_sig).
 """
 
 from numpy import linspace
 from numpy.linalg import norm as np_norm
 from iisignature import logsig
-from .transformations import right_log, skew_to_vector
+from .so3_math import right_log, skew_to_vector
 
 
 def log_signature(path, s):
-    """Thin wrapper around `iisignature.logsig`.
+    """
+    Thin wrapper around `iisignature.logsig`.
 
     Parameters
     ----------
@@ -32,7 +30,8 @@ def log_signature(path, s):
 
 
 def curve_log_signature(c, s):
-    """Compute the log-signature of a curve in SO(3)^d.
+    """
+    Compute the log-signature of a curve in SO(3)^d.
 
     Parameters
     ----------
@@ -46,18 +45,14 @@ def curve_log_signature(c, s):
     ndarray
         The log-signature of the curve.
 
-    Warning
-    -------
+    Note
+    ----
     This computes the right-logarithmic derivative `q` of `c` (the same
     quantity `SRVT` normalizes) and calls `log_signature(q, s)` directly on
-    that piecewise-constant `q`. The original (Lystad) codebase this
-    project forks from also builds a piecewise-linear lift of `q` at this
-    point and never uses it -- that dead computation (and the crash it
-    could cause for short curves) has been removed here; see git history /
-    earlier project notes. Whether the signature should technically be
-    taken of the lifted path instead of `q` directly is a separate,
-    unresolved question, flagged here rather than silently changed, since
-    it would alter every signature-based result in this project.
+    that piecewise-constant `q`, rather than on a piecewise-linear lift of
+    `q`. Whether the signature should technically be taken of a lifted
+    path instead is an open question -- flagged here since it would alter
+    every signature-based result in this project.
     """
     is_multi = len(c.shape) == 4
     I = linspace(0, 1, c.shape[1 if is_multi else 0])

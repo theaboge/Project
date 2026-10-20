@@ -1,6 +1,6 @@
 """
 Computes the normalized log-signature distance for all pairs in the
-27-animation dataset and writes them to a CSV.
+29-animation dataset and writes them to a CSV.
 
 Unlike compute_dp.py, this doesn't need multiprocessing -- signature
 computation is cheap and per-animation, not per-pair, so the whole dataset
@@ -13,13 +13,14 @@ import csv, argparse
 from pathlib import Path
 from itertools import combinations_with_replacement
 import iisignature
-from shapes import log_signature as ls
+from shapes import log_signature_distance as ls
 from shapes.mocap_io import load_curve
-from compute_dp import ANIMATIONS, paths_for
+from dataset import ANIMATIONS, paths_for
 
 
 def compute_all_signatures(k=3):
-    """Compute and cache the log-signature of every animation once.
+    """
+    Compute and cache the log-signature of every animation once.
 
     Parameters
     ----------
