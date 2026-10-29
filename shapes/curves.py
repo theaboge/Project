@@ -72,7 +72,6 @@ def dynamic_distance(c0, c1, depth=5):
     c1_new = reparameterize(I1_new, I1, c1)
     return distance(c0, c1_new, I0=I0, I1=I1)
 
-
 def move_origin_to_zero(c):
     """
     Move the origin of a curve in SO(3)^d to the identity. Recurses over multi-joint curves.

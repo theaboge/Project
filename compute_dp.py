@@ -75,9 +75,9 @@ if __name__ == "__main__":
     # method re-imports this file in every worker process, which would
     # re-trigger pool creation recursively and crash.
     ap = argparse.ArgumentParser()
-    ap.add_argument("--depth", type=int, default=6, help="DP search-window size (cost/accuracy knob)")
+    ap.add_argument("--depth", type=int, default=9, help="DP search-window size (cost/accuracy knob)")
     ap.add_argument("--processes", type=int, default=8, help="number of parallel worker processes")
-    ap.add_argument("--out", default="data/results/dp_depth6.csv", help="CSV file to append results to")
+    ap.add_argument("--out", default="data/results/dp_depth9.csv", help="CSV file to append results to")
     args = ap.parse_args()
 
     ids = sorted(ANIMATIONS)
