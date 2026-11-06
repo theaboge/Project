@@ -46,6 +46,12 @@ ANIMATIONS = {
 }
 
 
+# The 23 joints of every curve, in the order of axis 0 of `load_curve` (the root, then the bones of the .asf file; the order is the same for all four subjects).
+# The hip joints and clavicles have no degrees of freedom, so their curve is the identity at every frame.
+JOINTS = ["root", "lhipjoint", "lfemur", "ltibia", "lfoot", "rhipjoint", "rfemur", "rtibia", "rfoot", "lowerback", "upperback", "thorax",
+          "lowerneck", "upperneck", "head", "lclavicle", "lhumerus", "lradius", "lwrist", "rclavicle", "rhumerus", "rradius", "rwrist"]
+STATIC_JOINTS = ["lhipjoint", "rhipjoint", "lclavicle", "rclavicle"]
+
 def paths_for(animation_id):
     """Look up the .asf/.amc paths and crop window for an animation id.
 
